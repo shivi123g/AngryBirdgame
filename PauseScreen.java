@@ -31,13 +31,21 @@ public class PauseScreen implements Screen {
 
 
 
-    public PauseScreen(Main game, GameScreen gameScreen) {
+    public PauseScreen(Main game, GameScreen gameScreen, int level) {
         this.game = game;
         this.gameScreen = gameScreen;
         this.stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        backgroundTexture = new Texture(Gdx.files.internal("background.png"));
+        if (level == 1) {
+            backgroundTexture = new Texture(Gdx.files.internal("pauselevel1.png"));
+        } else if (level == 2) {
+            backgroundTexture = new Texture(Gdx.files.internal("pauselevel2.png"));
+        } else if (level == 3) {
+            backgroundTexture = new Texture(Gdx.files.internal("pauselevel3.png"));
+        }
+
+
         BitmapFont font = new BitmapFont();
 
         TextButton.TextButtonStyle settingsButtonStyle = new TextButton.TextButtonStyle();
