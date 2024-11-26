@@ -1,83 +1,67 @@
 package io.github.bird.game.Objects;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public abstract class Bird extends Actor {
-    protected Texture birdTexture;
-    protected Vector2 position;
-    protected Vector2 velocity;
-    protected Rectangle bounds;
+    protected World world;
+    protected Body body;
+    protected Texture texture;
+    private static final float RADIUS = 0.5f; // Assuming 0.5 meters for the bird's size
 
-    protected static final float GRAVITY = -15;
-    protected static final float JUMP_FORCE = 250;
+    public Bird(World world, float x, float y, String texturePath) {
+        this.world = world;
+        this.texture = new Texture(texturePath);
 
-    public Bird(String texturePath) {
-        birdTexture = new Texture(texturePath); // Load texture
-        position = new Vector2(100, Gdx.graphics.getHeight() / 2); // Initial position
-        velocity = new Vector2(0, 0); // Initial velocity
-        bounds = new Rectangle(position.x, position.y, birdTexture.getWidth(), birdTexture.getHeight());
-        setBounds(position.x, position.y, birdTexture.getWidth(), birdTexture.getHeight());
-    }
+        // Define the bird's physics body
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        bodyDef.position.set(x, y);
+        body = world.createBody(bodyDef);
 
-    public void update(float delta) {
-        if (position.y > 0 || velocity.y > 0) {
-            velocity.add(0, GRAVITY); // Apply gravity
-        }
+        // Define the bird's shape and fixture
+        CircleShape shape = new CircleShape();
+        shape.setRadius(RADIUS);
 
-        velocity.scl(delta);
-        position.add(0, velocity.y); // Update position by velocity
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = shape;
+        fixtureDef.density = 1.0f; // Adjust as necessary
+        fixtureDef.friction = 0.5f;
+        fixtureDef.restitution = 0.6f; // Bounciness
 
-        if (position.y < 0) {
-            position.y = 0; // Prevent falling below the screen
-        }
+        Fixture fixture = body.createFixture(fixtureDef);
+        shape.dispose(); // Dispose of the shape to avoid memory leaks
 
-        velocity.scl(1 / delta); // Un-scale velocity
-        bounds.setPosition(position.x, position.y); // Update bounding box
-    }
-
-    public void jump() {
-        velocity.y = JUMP_FORCE; // Apply jump force
-    }
-
-    // Getter for velocity
-    public Vector2 getVelocity() {
-        return velocity; // Return current velocity
-    }
-
-    // Setter for velocity
-    public void setVelocity(Vector2 velocity) {
-        this.velocity = velocity; // Set velocity
-    }
-
-    // Getter for position
-    public Vector2 getPosition() {
-        return position; // Return current position
+        // Set the bird's size based on the texture dimensions
+        setSize(texture.getWidth(), texture.getHeight());
+        setPosition(x - getWidth() / 2, y - getHeight() / 2);
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        batch.draw(birdTexture, position.x, position.y); // Draw bird at its position
+        batch.draw(texture, getX(), getY(), getWidth(), getHeight());
     }
 
     @Override
     public void act(float delta) {
-        update(delta); // Update the bird
-        debug(); // Call debug method to print info
+        super.act(delta);
+        // Synchronize the bird's position with the Box2D body
+        Vector2 position = body.getPosition();
+        setPosition(position.x - getWidth() / 2, position.y - getHeight() / 2);
     }
-
-    public Rectangle getBounds() {
-        return bounds; // Return bounds for collision detection
-    }
-
 
     public void dispose() {
-        birdTexture.dispose(); // Dispose of texture to free memory
+        texture.dispose();
+        world.destroyBody(body);
     }
 
+    public abstract void specialAbility(); // Abstract method for specific bird abilities
 }
